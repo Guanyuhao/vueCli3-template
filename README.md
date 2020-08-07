@@ -1,4 +1,4 @@
-# ORC 平台
+# VueCli3 模板
 
 ### Customize configuration
 
@@ -23,3 +23,8 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - componements 公用组件
 - icons SVG 目录
 - utils tool 函数
+
+## 高阶组件
+
+- MiXin
+- hoc.js
