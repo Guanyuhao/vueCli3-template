@@ -26,15 +26,15 @@ module.exports = {
     hot: true, // 热更新
     port: 9999, // 端口地址
     https: false, // 使用https提供服务
-    proxy: {
-      "/api": {
-        target: "",
-        changeOrigin: true,
-        pathRewrite: {
-          "^/api": ""
-        }
-      }
-    },
+    // proxy: {
+    //   "/api": {
+    //     target: "",
+    //     changeOrigin: true,
+    //     pathRewrite: {
+    //       "^/api": ""
+    //     }
+    //   }
+    // },
     watchOptions: {
       // 不监听的文件或文件夹，支持正则匹配
       ignored: /node_modules/,

@@ -1,6 +1,6 @@
 import Vue from "vue"
 
-import { parseTime } from "@utils"
+import { parseTime } from "./index"
 
 Vue.filter("parseTime", function(value) {
   // 返回处理后的值
