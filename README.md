@@ -1,10 +1,10 @@
 # VueCli3 模板
 
-### Customize configuration
+### 自定义配置 API
 
 See [Configuration Reference](https://cli.vuejs.org/config/).
 
-# Vue CLI v3.11.0
+## Vue CLI v3.11.0
 
 - Babel
 - Router
@@ -14,7 +14,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - In deicated config files
 - save select (name is "ocr")
 
-# 代码风格的统一
+## 代码风格的统一
 
 - [Prettier](https://segmentfault.com/a/1190000012909159)
 
@@ -24,7 +24,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - icons SVG 目录
 - utils tool 函数
 
-## 高阶组件
+### 高阶组件
 
 - MiXin
 - hoc.js
