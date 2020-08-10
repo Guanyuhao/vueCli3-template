@@ -56,11 +56,28 @@ module.exports = {
         })
       )
     }
+    // worker-loader
+    // config.module.rules.push({
+    //   test: /\.worker\.js$/,
+    //   use: {
+    //     loader: "worker-loader",
+    //     options: {
+    //       publicPath: "/src/common/workers/",
+    //       inline: true,
+    //       fallback: false,
+    //       name: "WorkerName.[hash].js"
+    //     }
+    //   }
+    // })
   },
   chainWebpack(config) {
     config.plugins.delete("preload") // TODO: need test
     config.plugins.delete("prefetch") // TODO: need test
-
+    config.resolve.alias
+      .set("@", resolve("src"))
+      .set("assets", resolve("src/assets"))
+      .set("views", resolve("src/views"))
+      .set("components", resolve("src/components"))
     // set svg-sprite-loader
     config.module
       .rule("svg")
