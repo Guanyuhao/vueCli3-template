@@ -16,6 +16,7 @@ module.exports = {
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     "linebreak-style": [0, "error", "windows"],
-    "no-empty-pattern": 0
+    "no-empty-pattern": 0, //使用空解构模式
+    "no-prototype-builtins": 0 //使用 Object.prototypes 的内置属性
   }
 }

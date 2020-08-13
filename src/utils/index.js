@@ -79,3 +79,36 @@ export function parseTime(time, cFormat) {
   })
   return time_str
 }
+
+export function throttle(fn, duration) {
+  let timer, last
+  return function() {
+    let args = arguments
+    let context = this
+    let now = +new Date()
+    let remaining = last ? last + duration - now : 0
+    if (remaining > 0) {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        last = +new Date()
+        fn.apply(context, args)
+        timer = null
+      }, remaining)
+    } else {
+      last = +new Date()
+      fn.apply(context, args)
+    }
+  }
+}
+export function debounce(fn, duration) {
+  let timer
+  return function() {
+    let args = arguments
+    let context = this
+    clearTimeout(timer)
+    timer = null
+    timer = setTimeout(function() {
+      fn.apply(context, args)
+    }, duration)
+  }
+}
