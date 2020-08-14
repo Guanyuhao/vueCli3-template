@@ -19,13 +19,11 @@ export default {
 .about {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
   h1 {
     height: 50px;
   }
   .layout-content {
-    flex: 1;
+    height: calc(100% - 50px);
   }
 }
 </style>
