@@ -17,8 +17,8 @@
       :style="svgStyle"
     >
       <line
-        v-for="item in lineArr"
-        :key="item.id"
+        v-for="(item, index) in lineArr"
+        :key="index"
         :x1="item.x1"
         :y1="item.y1"
         :x2="item.x2"
@@ -64,7 +64,7 @@
           :id="activeGroup.rect.id"
           :width="activeGroup.rect.width"
           :height="activeGroup.rect.height"
-          class="svg_select_boundingRect svg_select_points"
+          class="svg_select_boundingRect"
         ></rect>
         <circle
           v-for="(circle, index) in activeGroup.circleArr"
@@ -80,7 +80,7 @@
               index === clrcleSelectActive ? 'svg_selected_points' : ''
             }`
           "
-          :@mouserenter="clircleHover(circle, index)"
+          @mouserenter="clircleHover(circle, index)"
         ></circle>
       </g>
       <rect
@@ -197,7 +197,6 @@ export default {
         return
       }
       this.labelActive = index
-
       this.creatRectGroup(item)
     },
     clircleHover(circle, index) {
@@ -314,7 +313,6 @@ export default {
       this.$el.addEventListener("mousedown", this.baseMouseDown)
       this.$el.addEventListener("mouseover", this.baseMouseOver)
       this.$el.addEventListener("mouseout", this.baseMouseOut)
-
       this.$el.addEventListener("mouseup", this.baseMouseUp)
       this.$el.addEventListener("click", this.mouseClick)
     },
@@ -388,29 +386,39 @@ export default {
             fillOpacity: "0.03",
             id: `canvas_shape_${this.rand()}`
           })
-          this.drawRect = []
           this.openMove()
         }
       }
     },
     baseMouseDown(e) {
       if (this.drawState.isMove) {
+        this.dragState.downXY = [e.offsetX, e.offsetY]
         let { target } = e
         if (target.classList.contains("svg_select_points")) {
+          // 利用
+          this.drawState.pointsAction = target.classList[0].split("_").pop()
           this.dragState.points = true
-          this.dragState.id = target.id
           return
         }
         if (target.classList.contains("canvas_shape_draggable")) {
+          let currItem = this.labelArr[this.labelActive]
+          let shapeX = Number(currItem.x) - this.dragState.downXY[0]
+          let shapeY = Number(currItem.y) - this.dragState.downXY[1]
+          this.dragState.shapeDragXY = [shapeX, shapeY]
           this.dragState.shapeDrag = true
-          this.dragState.id = target.id
           return
         }
-        this.dragState.downXY = [e.offsetX, e.offsetY]
+        this.drawState.cavasPosition = [
+          Number.parseInt(this.svgStyle.left),
+          Number.parseInt(this.svgStyle.top),
+          Number.parseInt(this.canvasStyle.left),
+          Number.parseInt(this.canvasStyle.top)
+        ]
         this.dragState.canvasDrag = true
       }
     },
     closeDrag() {
+      this.dragState.downXY = []
       this.dragState.canvasDrag = false
       this.dragState.points = false
       this.dragState.shapeDrag = false
@@ -433,26 +441,44 @@ export default {
         }
       }
       if (this.drawState.isMove) {
-        if (this.dragState.canvasDrag) {
-          this.moveCanvasImag(e.offsetX, e.offsetY)
+        if (this.dragState.downXY.length > 0) {
+          this.drawMoveAction(e.offsetX, e.offsetY)
         }
       }
     },
-    moveCanvasImag(x, y) {
+    drawMoveAction(x, y) {
       let distanceX = x - this.dragState.downXY[0]
       let distanceY = y - this.dragState.downXY[1]
-      this.fixCanvasImage(distanceX, distanceY)
+      if (this.dragState.points) {
+        this.fixPoints(distanceX, distanceY)
+      } else if (this.dragState.shapeDrag) {
+        this.fixRect(x, y)
+      } else if (this.dragState.canvasDrag) {
+        this.fixCanvasImage(distanceX, distanceY)
+      }
     },
     fixCanvasImage(distanceX, distanceY) {
-      this.canvasStyle.left = `${Number.parseInt(this.canvasStyle.left) +
-        distanceX}px`
-      this.canvasStyle.top = `${Number.parseInt(this.canvasStyle.top) +
-        distanceY}px`
-      this.svgStyle.left = `${Number.parseInt(this.svgStyle.left) +
-        distanceX}px`
-      this.svgStyle.top = `${Number.parseInt(this.svgStyle.top) + distanceY}px`
+      this.svgStyle.left = `${this.drawState.cavasPosition[0] + distanceX}px`
+      this.svgStyle.top = `${this.drawState.cavasPosition[1] + distanceY}px`
+      this.canvasStyle.left = `${this.drawState.cavasPosition[2] + distanceX}px`
+      this.canvasStyle.top = `${this.drawState.cavasPosition[3] + distanceY}px`
+    },
+    fixRect(x, y) {
+      let currItem = this.labelArr[this.labelActive]
+      currItem.x = `${x + this.dragState.shapeDragXY[0]}`
+      currItem.y = `${y + this.dragState.shapeDragXY[1]}`
+      this.creatRectGroup(currItem)
+    },
+    fixPoints() {
+      /**
+       * (l,r) (x,width)
+       * (t,b) (y,height)
+       * (l.b) (x,y)
+       * (r,b) (widht,height)
+       */
     },
     createRect(x, y) {
+      // clickX clickY 矩形 Old (x,y)
       if (this.drawState.shapDrawing) {
         let currRect = this.drawRect[0]
         let w = Math.abs(currRect.clickX - x)
