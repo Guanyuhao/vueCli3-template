@@ -149,6 +149,9 @@ export default {
   mounted() {
     this.canvasInit()
   },
+  destroyed() {
+    this.removeDrawGraph()
+  },
   methods: {
     canvasInit() {
       let { offsetWidth, offsetHeight } = this.$el
@@ -205,7 +208,7 @@ export default {
       }
       this.clrcleSelectActive = index
     },
-    creatRectGroup(graph) {
+    creatRectGroup(graph, isFix = false) {
       let { width, height, x, y, fill } = graph
       let circleArr = []
       let circleBase = {
@@ -263,19 +266,28 @@ export default {
         class: "svg_select_points_l",
         ...circleBase
       })
-      this.activeGroup = {
-        rect: {
-          id: `SvgjsRect${this.rand()}`,
-          width,
-          height,
-          x,
-          y,
-          fill
-        },
-        transform: `matrix(1,0,0,1,${x},${y})`,
-        fill,
-        id: `SvgjsG${this.rand()}`,
-        circleArr
+      if (isFix) {
+        this.activeGroup.rect.width = width
+        this.activeGroup.rect.height = height
+        this.activeGroup.rect.x = x
+        this.activeGroup.rect.y = y
+        this.activeGroup.transform = `matrix(1,0,0,1,${x},${y})`
+        this.activeGroup.circleArr = circleArr
+      } else {
+        this.activeGroup = {
+          rect: {
+            id: `SvgjsRect${this.rand()}`,
+            width,
+            height,
+            x,
+            y,
+            fill
+          },
+          transform: `matrix(1,0,0,1,${x},${y})`,
+          fill,
+          id: `SvgjsG${this.rand()}`,
+          circleArr
+        }
       }
     },
     zommFix(newVal, oldVal) {
@@ -308,9 +320,9 @@ export default {
       }
     },
     drawGraph() {
-      window.addEventListener("wheel", throttle(this.baseMouseWheel, 30))
-      this.$el.addEventListener("mousemove", throttle(this.baseMouseMove, 30))
       this.$el.addEventListener("mousedown", this.baseMouseDown)
+      window.addEventListener("wheel", throttle(this.baseMouseWheel, 30))
+      this.$el.addEventListener("mousemove", this.baseMouseMove)
       this.$el.addEventListener("mouseover", this.baseMouseOver)
       this.$el.addEventListener("mouseout", this.baseMouseOut)
       this.$el.addEventListener("mouseup", this.baseMouseUp)
@@ -391,19 +403,35 @@ export default {
       }
     },
     baseMouseDown(e) {
+      /*
+       * A 初始坐标点 B 鼠标位置
+       * A1 结果坐标点 B1 移动后鼠标位置
+       * A-B=D A1-B1=D => A1=B1+D
+       */
       if (this.drawState.isMove) {
-        this.dragState.downXY = [e.offsetX, e.offsetY]
+        this.dragState.downXY = [e.screenX, e.screenY]
         let { target } = e
         if (target.classList.contains("svg_select_points")) {
           // 利用
-          this.drawState.pointsAction = target.classList[0].split("_").pop()
+          this.dragState.pointsAction = target.classList[0].split("_").pop()
           this.dragState.points = true
+          let currItem = this.labelArr[this.labelActive]
+          let { x, y, width, height } = currItem
+
+          this.dragState.pointsOld = {
+            x,
+            y,
+            width,
+            height,
+            downX: e.offsetX,
+            downY: e.offsetY
+          }
           return
         }
         if (target.classList.contains("canvas_shape_draggable")) {
           let currItem = this.labelArr[this.labelActive]
-          let shapeX = Number(currItem.x) - this.dragState.downXY[0]
-          let shapeY = Number(currItem.y) - this.dragState.downXY[1]
+          let shapeX = Number(currItem.x) - e.offsetX
+          let shapeY = Number(currItem.y) - e.offsetY
           this.dragState.shapeDragXY = [shapeX, shapeY]
           this.dragState.shapeDrag = true
           return
@@ -427,11 +455,9 @@ export default {
       this.closeDrag()
     },
     baseMouseOut() {
-      // this.dragState.canvasDrag = false
+      // this.closeDrag()
     },
-    baseMouseOver() {
-      this.closeDrag()
-    },
+    baseMouseOver() {},
     baseMouseMove(e) {
       if (this.drawState.isGraph) {
         // move 事件 进入 画图状态
@@ -442,15 +468,15 @@ export default {
       }
       if (this.drawState.isMove) {
         if (this.dragState.downXY.length > 0) {
-          this.drawMoveAction(e.offsetX, e.offsetY)
+          let distanceX = e.screenX - this.dragState.downXY[0]
+          let distanceY = e.screenY - this.dragState.downXY[1]
+          this.drawMoveAction(e.offsetX, e.offsetY, distanceX, distanceY)
         }
       }
     },
-    drawMoveAction(x, y) {
-      let distanceX = x - this.dragState.downXY[0]
-      let distanceY = y - this.dragState.downXY[1]
+    drawMoveAction(x, y, distanceX, distanceY) {
       if (this.dragState.points) {
-        this.fixPoints(distanceX, distanceY)
+        this.fixPoints(x, y, distanceX, distanceY)
       } else if (this.dragState.shapeDrag) {
         this.fixRect(x, y)
       } else if (this.dragState.canvasDrag) {
@@ -467,15 +493,65 @@ export default {
       let currItem = this.labelArr[this.labelActive]
       currItem.x = `${x + this.dragState.shapeDragXY[0]}`
       currItem.y = `${y + this.dragState.shapeDragXY[1]}`
-      this.creatRectGroup(currItem)
+      this.creatRectGroup(currItem, true)
     },
-    fixPoints() {
+    fixPoints(x, y) {
       /**
        * (l,r) (x,width)
        * (t,b) (y,height)
        * (l.b) (x,y)
        * (r,b) (widht,height)
        */
+      let actionStr = this.dragState.pointsAction
+      if (!actionStr) {
+        return
+      }
+      let currItem = this.labelArr[this.labelActive]
+      let pointsOld = this.dragState.pointsOld
+      let disW = x - pointsOld.downX
+      let disH = y - pointsOld.downY
+      // 区域限制 不能反向拉伸
+      if (disW > 0) {
+        if (Number(pointsOld.width) - disW < 1) {
+          return
+        }
+      } else {
+        if (Number(pointsOld.width) + disW < 1) {
+          return
+        }
+      }
+      if (disH > 0) {
+        if (Number(pointsOld.height) - disH < 1) {
+          return
+        }
+      } else {
+        if (Number(pointsOld.height) + disH < 1) {
+          return
+        }
+      }
+
+      for (let index = 0; index < actionStr.length; index++) {
+        const key = actionStr.charAt(index)
+        switch (key) {
+          case "l":
+            currItem.x = x
+            currItem.width = `${Number(pointsOld.width) - disW}`
+            break
+          case "r":
+            currItem.width = `${Number(pointsOld.width) + disW}`
+            break
+          case "t":
+            currItem.y = y
+            currItem.height = `${Number(pointsOld.height) - disH}`
+            break
+          case "b":
+            currItem.height = `${Number(pointsOld.height) + disH}`
+            break
+          default:
+            break
+        }
+      }
+      this.creatRectGroup(currItem, true)
     },
     createRect(x, y) {
       // clickX clickY 矩形 Old (x,y)
@@ -539,6 +615,15 @@ export default {
         }
       }
       return $svg
+    },
+    removeDrawGraph() {
+      window.removeEventListener("wheel", throttle(this.baseMouseWheel, 30))
+      this.$el.removeEventListener("mousemove", this.baseMouseMove)
+      this.$el.removeEventListener("mousedown", this.baseMouseDown)
+      this.$el.removeEventListener("mouseover", this.baseMouseOver)
+      this.$el.removeEventListener("mouseout", this.baseMouseOut)
+      this.$el.removeEventListener("mouseup", this.baseMouseUp)
+      this.$el.removeEventListener("click", this.mouseClick)
     }
   },
   watch: {

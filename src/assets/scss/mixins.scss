@@ -1,0 +1,84 @@
+@import "./vars";
+@mixin clearfix() {
+  zoom: 1;
+  &:before,
+  &:after {
+    content: "";
+    display: table;
+  }
+  &:after {
+    clear: both;
+  }
+}
+
+@mixin classflex($p: space-between) {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: -moz-box;
+  display: flex;
+  -webkit-box-pack: justify;
+  -moz-box-pack: justify;
+  -ms-box-pack: justify;
+  -webkit-justify-content: $p;
+  justify-content: $p;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+@mixin mobile-hide() {
+  @media screen and (max-width: $mobileWidth) {
+    display: none;
+  }
+}
+
+@mixin resetPlaceholder($color: #999999) {
+  input::-webkit-input-placeholder,
+  textarea::-webkit-input-placeholder {
+    /* WebKit browsers */
+    color: $color;
+  }
+  input:-moz-placeholder,
+  textarea:-moz-placeholder {
+    /* Mozilla Firefox 4 to 18 */
+    color: $color;
+  }
+  input::-moz-placeholder,
+  textarea::-moz-placeholder {
+    /* Mozilla Firefox 19+ */
+    color: $color;
+  }
+  input:-ms-input-placeholder,
+  textarea:-ms-input-placeholder {
+    /* Internet Explorer 10+ */
+    color: $color;
+  }
+}
+
+@mixin verticalLine($color: $blue) {
+  width: 2px;
+  height: 20px;
+  background: $color;
+  position: absolute;
+}
+
+@mixin cricle($color: $blue) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: $color;
+  display: block;
+}
+@mixin scrollClass() {
+  &::-webkit-scrollbar-track {
+    box-shadow: none;
+    border-radius: 1px;
+    background-color: #f5f5f5;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: #dadada;
+  }
+}
