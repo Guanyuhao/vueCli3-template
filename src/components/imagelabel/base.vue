@@ -143,7 +143,43 @@ export default {
       labelArr: [],
       labelActive: -1,
       activeGroup: null,
-      clrcleSelectActive: -1
+      clrcleSelectActive: -1,
+      canvasWidth: 0,
+      canvasHeight: 0
+    }
+  },
+  computed: {
+    elWidth() {
+      let { offsetWidth } = this.$el
+      return offsetWidth
+    },
+    elHeight() {
+      let { offsetHeight } = this.$el
+      return offsetHeight
+    },
+    svgWidth() {
+      return this.elWidth * 20
+    },
+    svgHeight() {
+      return this.elHeight * 20
+    },
+    canvasDisX() {
+      return this.svgWidth / 2 - this.canvasWidth / 2
+    },
+    canvasLeft() {
+      return this.canvasDisX - (this.elWidth / 2 - this.canvasWidth / 2)
+    },
+    canvasDisY() {
+      return this.svgHeight / 2 - this.canvasHeight / 2
+    },
+    canvasTop() {
+      return this.canvasDisY - (this.elHeight / 2 - this.canvasHeight / 2)
+    },
+    strokeWidth() {
+      return Number.parseFloat(1 / this.drawState.scale).toFixed(2)
+    },
+    circleRadius() {
+      return Number.parseFloat(5 / Number(this.drawState.weelScal)).toFixed(2)
     }
   },
   mounted() {
@@ -154,36 +190,55 @@ export default {
   },
   methods: {
     canvasInit() {
-      let { offsetWidth, offsetHeight } = this.$el
+      // 画布初始化
+      this.svgInit()
+      // 事件的绑定
+      this.drawGraph()
+      // promise 形式放回图片 loader
+      return this.imgLoader()
+    },
+    svgInit() {
       // 放大 svg 范围 并且居中
-      let svgWidth = offsetWidth * 20
-      let svgHeight = offsetHeight * 20
-      this.svgStyle.width = `${svgWidth}px`
-      this.svgStyle.height = `${svgHeight}px`
-      this.svgStyle.left = `-${svgWidth / 2 - offsetWidth / 2}px`
-      this.svgStyle.top = `-${svgHeight / 2 - offsetHeight / 2}px`
-      // canvas
+      this.svgStyle.width = `${this.svgWidth}px`
+      this.svgStyle.height = `${this.svgHeight}px`
+      this.svgStyle.left = `-${this.svgWidth / 2 - this.elWidth / 2}px`
+      this.svgStyle.top = `-${this.svgHeight / 2 - this.elHeight / 2}px`
+    },
+    imgLoader() {
+      let offsetWidth = this.elWidth
+      let offsetHeight = this.elHeight
       let img = new Image()
       img.src = this.imageUrl
       let mycanvas = document.getElementById("canvas_background")
       let ctx = mycanvas.getContext("2d")
-      img.onload = () => {
-        mycanvas.width = img.width
-        mycanvas.height = img.height
-        ctx.drawImage(img, 0, 0)
-        let scale = (offsetWidth / mycanvas.width).toFixed(5)
-        // weel 状态初始化
-        this.drawState.weelScal = Number(scale)
-        this.svgStyle.transform = `scale(${scale}) rotate(0deg)`
-
-        this.canvasStyle.transform = `scale(${scale}) rotate(0deg)`
-        this.canvasStyle.left = `${offsetWidth / 2 - mycanvas.width / 2}px`
-        this.canvasStyle.top = `${offsetHeight / 2 - mycanvas.height / 2}px`
-        this.canvasStyle.width = `${mycanvas.width}px`
-        this.canvasStyle.height = `${mycanvas.height}px`
+      return new Promise(resolve => {
+        img.onload = () => {
+          mycanvas.width = img.width
+          mycanvas.height = img.height
+          this.canvasWidth = img.width
+          this.canvasHeight = img.height
+          ctx.drawImage(img, 0, 0)
+          this.canvasStyle.left = `${offsetWidth / 2 - mycanvas.width / 2}px`
+          this.canvasStyle.top = `${offsetHeight / 2 - mycanvas.height / 2}px`
+          this.canvasStyle.width = `${mycanvas.width}px`
+          this.canvasStyle.height = `${mycanvas.height}px`
+          this.scaleInit(mycanvas)
+          resolve()
+        }
+      })
+    },
+    scaleInit(mycanvas) {
+      let scale = 1
+      let offsetWidth = this.elWidth
+      if (offsetWidth > 1080) {
+        scale = (1080 / mycanvas.width).toFixed(5)
+      } else {
+        scale = (offsetWidth / mycanvas.width).toFixed(5)
       }
-      // 画图
-      this.drawGraph()
+      // weel 状态初始化
+      this.drawState.weelScal = Number(scale)
+      this.svgStyle.transform = `scale(${scale}) rotate(0deg)`
+      this.canvasStyle.transform = `scale(${scale}) rotate(0deg)`
     },
     openMove() {
       this.drawState.isMove = true

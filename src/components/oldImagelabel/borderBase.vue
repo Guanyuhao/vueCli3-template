@@ -136,7 +136,8 @@ export default {
       labelTagArr: [],
       baseImg: {
         width: 0,
-        height: 0
+        height: 0,
+        url: "#"
       },
       // 图形操作状态
       operateingState: false,
@@ -270,9 +271,10 @@ export default {
     demoInit() {
       this.setImg({
         url:
-          "https://picb.zhimg.com/v2-8551e0c88b29401e3c440598cdcf2611_1440w.jpg?source=172ae18b",
-        width: 700,
-        height: 700
+          // "https://picb.zhimg.com/v2-8551e0c88b29401e3c440598cdcf2611_1440w.jpg?source=172ae18b",
+          "http://192.168.1.200:8888/group1/M00/00/02/wKgByF82U6aAbJMrAE3_cMh1y8o109.png",
+        width: 1311,
+        height: 937
       })
       this.init()
     },
